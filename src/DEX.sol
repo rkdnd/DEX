@@ -18,7 +18,6 @@ import "./ERC20.sol";
 */
 interface IDEX{
     function swap(uint256 tokenXAmount, uint256 tokenYAmount, uint256 tokenMinimumOutputAmount) external returns (uint256 outputAmount);
-        // tokenXAmount / tokenYAmount 중 하나는 무조건 0이어야 합니다. 수량이 0인 토큰으로 스왑됨.
     function addLiquidity(uint256 tokenXAmount, uint256 tokenYAmount, uint256 minimumLPTokenAmount) external returns (uint256 LPTokenAmount);
     function removeLiquidity(uint256 LPTokenAmount, uint256 minimumTokenXAmount, uint256 minimumTokenYAmount) external;
 }
@@ -31,8 +30,8 @@ contract DEX is IDEX, ERC20{
     address tokenX;
     address tokenY;
 
-    uint112 private reserve0;
-    uint112 private reserve1;
+    uint256 private reserve0;
+    uint256 private reserve1;
 
     constructor() ERC20("GWDEX", "GW") {
         factory = msg.sender;
@@ -45,44 +44,49 @@ contract DEX is IDEX, ERC20{
         tokenY = token1;
     }
 
-    function getReserves() public view returns (uint112 _reserve0, uint112 _reserve1) {
+    function getReserves() public view returns (uint256 _reserve0, uint256 _reserve1) {
         _reserve0 = reserve0;
         _reserve1 = reserve1;
     }
 
     function _update(uint balance0, uint balance1) private {
-        reserve0 = uint112(balance0);
-        reserve1 = uint112(balance1);
+        reserve0 = uint256(balance0);
+        reserve1 = uint256(balance1);
     }
 
     function swap(uint256 tokenXAmount, uint256 tokenYAmount, uint256 tokenMinimumOutputAmount) external returns (uint256 outputAmount){
         require(tokenXAmount > 0 || tokenYAmount > 0, 'INSUFFICIENT_OUTPUT_AMOUNT');
-        (uint112 _reserve0, uint112 _reserve1) = getReserves(); // gas savings
-        require(tokenXAmount < _reserve0 && tokenYAmount < _reserve1, 'INSUFFICIENT_LIQUIDITY');
+        
+        (uint256 _reserve0, uint256 _reserve1) = getReserves();
+        (address inToken, address outToken, uint inputAmount, uint256 reserveTo, uint256 reserveGet) = 
+            (tokenYAmount == 0) ? (tokenX, tokenY, tokenXAmount, _reserve0, _reserve1) : (tokenY, tokenX, tokenYAmount, _reserve1, _reserve0);
 
-        address _tokenX = tokenX;
-        address _tokenY = tokenY;
+        uint256 balance = ERC20(inToken).balanceOf(msg.sender);
+        require(balance >= inputAmount, 'Over balances');
 
-        uint256 constK = _reserve0 * _reserve1;
-        uint output;
-
-        if (tokenXAmount > 0){
-            output = constK / (_reserve0 + tokenXAmount) - _reserve1;
-            _transfer(_tokenY, address(this), output);
-            _update((tokenXAmount + _reserve0), (_reserve1 - output));
-        }    
-        if (tokenYAmount > 0) {
-            output = constK / (_reserve1 + tokenXAmount) - _reserve0;
-            _transfer(_tokenX, address(this), output);
-            _update((tokenXAmount - output), (tokenYAmount + _reserve1));
-        }
+        (outputAmount, reserveTo, reserveGet)  = _swap(inToken, outToken, inputAmount, reserveTo, reserveGet, tokenMinimumOutputAmount);
+        (tokenYAmount == 0) ? _update(reserveTo, reserveGet) : _update(reserveGet, reserveTo);
     }
+
+    function _swap(address inToken, address outToken, uint256 inputAmount, uint256 reserveTo, uint256 reserveGet, uint minimum) internal returns (uint256 outputAmount, uint112 _reserveTo, uint112 _reserveGet){
+        uint256 constK = (reserveTo / 1000) * (reserveGet / 1000);
+
+        outputAmount = reserveGet - constK / (reserveTo + inputAmount);
+        require(outputAmount >= minimum, "lower than minimum output Tokens");
+
+        uint256 _reserveTo = reserveTo + inputAmount;
+        uint256 _reserveGet = reserveGet - outputAmount;
+
+        _transfer(inToken, address(this), inputAmount);
+        _transfer(outToken, msg.sender ,outputAmount);
+    }
+
     function addLiquidity(uint256 tokenXAmount, uint256 tokenYAmount, uint256 minimumLPTokenAmount) external returns (uint256 LPTokenAmount){
         uint balance0 = ERC20(tokenX).balanceOf(address(this));
         uint balance1 = ERC20(tokenY).balanceOf(address(this));
-        // require(tokenXAmount <= balance0 && tokenYAmount <= balance1, 'tokens out of owned') ;
+        require(tokenXAmount <= balance0 && tokenYAmount <= balance1, 'tokens out of owned') ;
 
-        (uint112 _reserve0, uint112 _reserve1) = getReserves();
+        (uint256 _reserve0, uint256 _reserve1) = getReserves();
         uint _totalSupply = totalSupply();
 
         if (_totalSupply == 0) {
@@ -100,7 +104,7 @@ contract DEX is IDEX, ERC20{
     function removeLiquidity(uint256 LPTokenAmount, uint256 minimumTokenXAmount, uint256 minimumTokenYAmount) external{
         uint liquidity = balanceOf(address(this));
         require(liquidity >= LPTokenAmount);
-        (uint112 _reserve0, uint112 _reserve1) = getReserves();                            
+        (uint256 _reserve0, uint256 _reserve1) = getReserves();                            
         uint balance0 = ERC20(tokenX).balanceOf(address(this));
         uint balance1 = ERC20(tokenY).balanceOf(address(this));
         uint _totalSupply = totalSupply();
@@ -109,7 +113,7 @@ contract DEX is IDEX, ERC20{
         uint256 amount1 = LPTokenAmount * minimumTokenYAmount / _totalSupply;
 
         //mintfee
-        // require(amount0 > 0 && amount1 > 0);
+        require(amount0 > 0 && amount1 > 0);
         _burn(address(this), LPTokenAmount);
 
         _transfer(tokenX, address(this), amount0);

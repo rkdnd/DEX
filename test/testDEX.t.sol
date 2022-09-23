@@ -2,7 +2,6 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/ERC20.sol";
-import "../src/IERC20.sol";
 import "../src/DEX.sol";
 import "../src/SwapFactory.sol";
 
@@ -20,7 +19,7 @@ contract DexTest is Test {
     DEX dex;
     MintableToken tokenX;
     MintableToken tokenY;
-    IERC20 lpToken;
+    // IERC20 lpToken;
 
     function setUp() public {
         tokenX = new MintableToken("token X", "TX");
@@ -32,11 +31,11 @@ contract DexTest is Test {
     }
 
     function testAddLiquidityBasic() public {
-        tokenX.approve(address(dex), 10 ether);
-        tokenY.approve(address(dex), 10 ether);
+        tokenX.mint(address(dex), 10 ether);
+        tokenY.mint(address(dex), 10 ether);
         uint lpTokenAmount1 = dex.addLiquidity(5 ether, 5 ether, 0);
-        tokenX.approve(address(dex), 20 ether);
-        tokenY.approve(address(dex), 20 ether);
+        tokenX.mint(address(dex), 20 ether);
+        tokenY.mint(address(dex), 20 ether);
         uint256 lpTokenAmount2 = dex.addLiquidity(20 ether, 20 ether, 0);
         require(lpTokenAmount2 > lpTokenAmount1);
     }
@@ -47,8 +46,8 @@ contract DexTest is Test {
         tokenY.transfer(provider, 10 ether);
 
         vm.startPrank(provider);
-        tokenX.approve(address(dex), 10 ether);
-        tokenY.approve(address(dex), 10 ether);
+        tokenX.mint(address(dex), 10 ether);
+        tokenY.mint(address(dex), 10 ether);
         uint lpTokenAmount = dex.addLiquidity(10 ether, 10 ether, 0);
         // uint256 lpBalance = lpToken.balanceOf(provider);
         // uint256 balBefore = tokenX.balanceOf(provider);
