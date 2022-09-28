@@ -40,34 +40,34 @@ contract DexTest is Test {
         require(lpTokenAmount2 > lpTokenAmount1);
     }
 
-    function testRemoveLiquidityBasic() public {
-        address provider = address(0x11223344);
-        tokenX.transfer(provider, 10 ether);
-        tokenY.transfer(provider, 10 ether);
+    // function testRemoveLiquidityBasic() public {
+    //     address provider = address(0x11223344);
+    //     tokenX.transfer(provider, 10 ether);
+    //     tokenY.transfer(provider, 10 ether);
 
-        vm.startPrank(provider);
-        tokenX.mint(address(dex), 10 ether);
-        tokenY.mint(address(dex), 10 ether);
-        uint lpTokenAmount = dex.addLiquidity(10 ether, 10 ether, 0);
-        // uint256 lpBalance = lpToken.balanceOf(provider);
-        // uint256 balBefore = tokenX.balanceOf(provider);
-        // lpToken.approve(address(dex), 10 ether);
-        dex.removeLiquidity(lpTokenAmount, 0, 0);
-        // uint256 balAfter = tokenX.balanceOf(provider);
-        // assertEq(balAfter, balBefore + 10 ether);
-    }
+    //     vm.startPrank(provider);
+    //     tokenX.approve(address(dex), 10 ether);
+    //     tokenY.approve(address(dex), 10 ether);
+    //     uint lpTokenAmount = dex.addLiquidity(10 ether, 10 ether, 0);
+    //     // uint256 lpBalance = lpToken.balanceOf(provider);
+    //     uint256 balBefore = tokenX.balanceOf(provider);
+    //     // lpToken.approve(address(dex), lpBalance);
+    //     dex.removeLiquidity(lpTokenAmount, 0, 0);
+    //     uint256 balAfter = tokenX.balanceOf(provider);
+    //     assertEq(balAfter, balBefore + 10 ether);
+    // }
 
-    function testSwapBasic() public {
-        address actor1 = address(0xaa);
-        address actor2 = address(0xbb);
-        tokenX.approve(address(dex), 10 ether);
-        tokenY.approve(address(dex), 10 ether);
-        uint256 lpTokenAmount = dex.addLiquidity(10 ether, 10 ether, 0);
-        tokenX.transfer(actor1, 1 ether);
-        vm.startPrank(actor1);
-        tokenX.approve(address(dex), 1 ether);
-        uint256 tokenYAmountFirst = dex.swap(0.1 ether, 0, 0);
-        uint256 tokenYAmountSecond = dex.swap(0.1 ether, 0, 0);
-        assert(tokenYAmountFirst > tokenYAmountSecond);
-    }
+        // function testSwapBasic() public {
+        //     address actor1 = address(0xaa);
+        //     address actor2 = address(0xbb);
+        //     tokenX.approve(address(dex), 10 ether);
+        //     tokenY.approve(address(dex), 10 ether);
+        //     uint256 lpTokenAmount = dex.addLiquidity(10 ether, 10 ether, 0);
+        //     tokenX.transfer(actor1, 1 ether);
+        //     vm.startPrank(actor1);
+        //     tokenX.approve(address(dex), 1 ether);
+        //     uint256 tokenYAmountFirst = dex.swap(0.1 ether, 0, 0);
+        //     uint256 tokenYAmountSecond = dex.swap(0.1 ether, 0, 0);
+        //     assert(tokenYAmountFirst > tokenYAmountSecond);
+        // }
 }

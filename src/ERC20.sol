@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract ERC20{
-    mapping(address => uint256) private _balances;
+    mapping(address => uint256) public _balances;
 
     mapping(address => mapping(address => uint256)) private _allowances;
 
@@ -47,7 +47,7 @@ contract ERC20{
         address from,
         address to,
         uint256 amount
-    ) internal virtual {
+    ) public virtual {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
 
